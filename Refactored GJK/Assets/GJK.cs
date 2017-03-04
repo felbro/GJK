@@ -45,15 +45,15 @@ public class GJK {
 
 		dir = p1.vertices [0] - p2.vertices [0];
 
-		List<Vector2> simplex = new List<Vector2> ();
-		simplex.Add (support (p1, p2, dir).diff);
+		List<MinkDiff> simplex = new List<MinkDiff> ();
+		simplex.Add (support (p1, p2, dir));
 		dir = -1 * dir;
 
 		loopcounter = 0;
 		while (true && loopcounter < 1000 && true && !false || false) {
-			Vector2 a = support (p1, p2, dir).diff;
+			MinkDiff a = support (p1, p2, dir);
 			simplex.Add (a);
-			if (!canContainOrigin (a, dir)) {
+			if (!canContainOrigin (a.diff, dir)) {
 				return false;
 			} else if (containsOrigin (simplex)) {
 				return true;
@@ -65,7 +65,7 @@ public class GJK {
 		p2.GetComponent<Renderer> ().material.color = Color.magenta;
 		return false;
 	}
-
+		
 	/** How are BA antipenetrating RG deep */
 	public Vector2[] BARG (Polygon p1, Polygon p2){
 		//dir = p1.transform.position - p2.transform.position;
@@ -156,12 +156,12 @@ public class GJK {
 		return Vector2.Dot (point, dir) >= 0;
 	}
 
-	bool containsOrigin (List<Vector2> simplex){
+	bool containsOrigin (List<MinkDiff> simplex){
 		if (simplex.Count == 3) {
 			return tripleSimplexHF (simplex);
 		} else {	// simplex.Count == 2
-			Vector2 a = simplex [1];
-			Vector2 b = simplex [0];
+			Vector2 a = simplex [1].diff;
+			Vector2 b = simplex [0].diff;
 			Vector2 newdir = tripleProd (b - a, -1 * a, b - a);
 
 			if (newdir.magnitude != 0) {
@@ -173,11 +173,11 @@ public class GJK {
 		}
 	}
 
-	bool tripleSimplexHF (List<Vector2> simplex){
-		Vector2 a = simplex [2];
+	bool tripleSimplexHF (List<MinkDiff> simplex){
+		Vector2 a = simplex [2].diff;
 		Vector2 ao = -1 * a;
-		Vector2 ab = simplex [1] - a;
-		Vector2 ac = simplex [0] - a;
+		Vector2 ab = simplex [1].diff - a;
+		Vector2 ac = simplex [0].diff - a;
 		Vector2 abPerp = tripleProd (ac, ab, ab);
 		Vector2 acPerp = tripleProd (ab, ac, ac);
 
