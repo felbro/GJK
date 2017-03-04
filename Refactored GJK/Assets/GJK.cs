@@ -3,20 +3,53 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-public class GJK {
+public class GJK : MonoBehaviour {
 	public Vector2 dir;
 	public double TOL = 1e-8;
 	public int loopcounter = 0;
+	public bool tutorialMode = false;
+	private LineRenderer line;
+	public List<GameObject> OuterLines;
+
+	GameObject lineobject;
+
+
 
 	public bool gjk(Polygon p1, Polygon p2){
+
+		Destroy (lineobject);
+		lineobject = new GameObject ();
+
+		line = lineobject.AddComponent<LineRenderer> ();
+		line.GetComponent<Renderer> ().material.color = Color.magenta;
+		line.widthMultiplier = 0.05f;
+		line.numPositions = 0;
+
+		drawOuterMinkiDiffi (p1, p2);
+		LineRenderer outline = OuterLines [0].GetComponent<LineRenderer> ();
+
 		for (int i = 0; i < p1.parts.Count; i++) {
 			for (int j = 0; j < p2.parts.Count; j++) {
+				foreach (GameObject gameobj in FindObjectsOfType<GameObject>()) {
+					if (gameobj.name == "TutorialDot"){
+						Destroy (gameobj);
+					}
+				}
+					
+				outline = OuterLines [i * p2.parts.Count + j].GetComponent<LineRenderer> ();
+				outline.GetComponent<Renderer> ().material.color = Color.red;
+
 				if (GARB (p1.parts [i], p2.parts [j])) {
 					return true;
 				}
+				outline.GetComponent<Renderer> ().material.color = Color.white;
 			}
 		}
+
+		outline.GetComponent<Renderer> ().material.color = Color.red;
 		return false;
+
+
 	}
 
 	public Vector2[] closestPoints(Polygon p1, Polygon p2){
@@ -38,27 +71,41 @@ public class GJK {
 	}
 
 
-	/** Are the GA intersecting the RB */
-	public	bool GARB (Polygon p1, Polygon p2){
-		//if (p1.transform.position == p2.transform.position)
-		//	return true;
 
+	/** Are the GA intersecting the RB */
+	public	bool  GARB (Polygon p1, Polygon p2){
+		List<Vector2> tutorialPoints = new List<Vector2> ();
 		dir = p1.vertices [0] - p2.vertices [0];
 
 		List<MinkDiff> simplex = new List<MinkDiff> ();
-		simplex.Add (support (p1, p2, dir));
+		MinkDiff a = support (p1, p2, dir);
+		simplex.Add (a);
+		tutorialPoints.Add (a.diff);
+		a.draw (0);
 		dir = -1 * dir;
 
 		loopcounter = 0;
+
 		while (true && loopcounter < 1000 && true && !false || false) {
-			MinkDiff a = support (p1, p2, dir);
-			simplex.Add (a);
-			if (!canContainOrigin (a.diff, dir)) {
-				return false;
-			} else if (containsOrigin (simplex)) {
-				return true;
-			}
-			loopcounter++;
+				a = support (p1, p2, dir);
+				simplex.Add (a);
+				tutorialPoints.Add (a.diff);
+				a.draw (loopcounter + 1);
+
+				List<Vector3> minkidiffipoints = jarvis (tutorialPoints);
+				minkidiffipoints.Add (minkidiffipoints [0]);
+				line.numPositions = minkidiffipoints.Count;
+				line.SetPositions (minkidiffipoints.ToArray ());
+
+				if (!canContainOrigin (a.diff, dir)) {
+					return false;
+				} else if (containsOrigin (simplex)) {
+					return true;
+				}
+					loopcounter++;
+
+
+
 		}
 			
 		p1.GetComponent<Renderer> ().material.color = Color.magenta;
@@ -144,7 +191,19 @@ public class GJK {
 
 
 	MinkDiff support (Polygon p1, Polygon p2, Vector2 dir){
-		return new MinkDiff (p1.getFurthest (dir), p2.getFurthest (-1 * dir));
+		//GameObject a = new GameObject ("MinkDiff");
+		//MinkDiff minkdiff = a.AddComponent<MinkDiff>() as MinkDiff;
+		//Destroy (a);
+		//return minkdiff;
+
+		GameObject a = new GameObject ("MinkDiff");
+		MinkDiff minkdiff = a.AddComponent<MinkDiff>() as MinkDiff;
+		Destroy (a);
+		minkdiff.s1Point = p1.getFurthest (dir);
+		minkdiff.s2Point = p2.getFurthest (-1 * dir);
+		minkdiff.diff = minkdiff.s1Point - minkdiff.s2Point;
+		return minkdiff;
+		//return new MinkDiff (p1.getFurthest (dir), p2.getFurthest (-1 * dir));
 	}
 
 	Vector2 tripleProd (Vector2 a, Vector2 b, Vector2 c){
@@ -193,4 +252,69 @@ public class GJK {
 
 		return false;
 	}	
+
+	public List<Vector3> jarvis(List<Vector2> points){
+		Vector3 currentPoint = points [0];
+		foreach (Vector2 point in points){
+			if (point.x < currentPoint.x) {
+				currentPoint = point;
+			}
+		}
+
+		List<Vector3> P = new List<Vector3> ();
+
+		for(int i = 0; i < points.Count; i++){
+			P.Add(currentPoint);
+			Vector3 endpoint = points [0];
+			foreach (Vector2 point in points){
+				if (endpoint == currentPoint || toTheRight(P[i], point, endpoint)){
+					endpoint = point;
+				}
+			}
+			currentPoint = endpoint;
+			if (endpoint == P[0]){
+				return P;
+			}
+		}
+
+		return new List<Vector3> (){Vector3.zero};
+	}
+
+	bool toTheRight(Vector3 prev, Vector3 curr, Vector3 next) {
+		return (next.y - prev.y) * (curr.x-prev.x) < (next.x - prev.x) * (curr.y-prev.y);
+	}
+
+	public void drawOuterMinkiDiffi(Polygon poly1, Polygon poly2){
+		if (OuterLines != null) {
+			foreach (GameObject line in OuterLines) {
+				line.GetComponent<LineRenderer> ().numPositions = 0;
+				Destroy (line);
+			}
+		}
+
+		OuterLines = new List<GameObject> ();
+
+		foreach (Polygon p1 in poly1.parts) {
+			foreach (Polygon p2 in poly2.parts) {
+				List<Vector2> stupidAssMinkiTriangle = new List<Vector2> ();
+
+				foreach (Vector2 v1 in p1.getVertices()) {
+					foreach (Vector2 v2 in p2.getVertices()) {
+						stupidAssMinkiTriangle.Add (v1 - v2);
+					}
+				}
+
+				List<Vector3> outerPoints = jarvis (stupidAssMinkiTriangle);
+				outerPoints.Add (outerPoints [0]);
+
+				GameObject lineObj = new GameObject();
+				LineRenderer line = lineObj.AddComponent<LineRenderer> ();
+				line.GetComponent<Renderer> ().material.color = Color.white;
+				line.widthMultiplier = 0.03f;
+				line.numPositions = outerPoints.Count;
+				line.SetPositions (outerPoints.ToArray ());
+				OuterLines.Add (lineObj); 
+			}
+		}
+	}
 }

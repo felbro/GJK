@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using System.Threading;
 
 /**
 * Class for dividing concave objects into
@@ -383,6 +384,8 @@ public class ConcaveSplit{
 	* @return true if the next vertex is straight ahead or to the right
   */
 	bool toTheRight(int prev, int curr, int next) {
+		if (prev == -1 || curr == -1 || next == -1)
+			Thread.Sleep (2000);
 		return (points[next].y - points[prev].y) * (points[curr].x-points[prev].x)
 			<= (points[next].x - points[prev].x) * (points[curr].y-points[prev].y);
 	}

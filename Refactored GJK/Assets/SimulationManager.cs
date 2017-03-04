@@ -16,13 +16,17 @@ public class SimulationManager : MonoBehaviour {
 	public List<Vector2> stupidAssMinkiTriangle;
 	public List<Vector3> outerPoints;
 	public LineRenderer minkiDinkiLine;
+	public List<GameObject> OuterLines;
 
 
 
 	// Use this for initialization
 	void Start () {
 		polys = new List<Polygon> ();
-		gjk = new GJK ();
+		//gjk = new GJK ();
+		GameObject a = new GameObject();
+		gjk = a.AddComponent<GJK> () as GJK;
+		Destroy (a);
 
 		List<Vector2> vertices2D = new List<Vector2>() {
 			/*new Vector2( -1.39f, 2.28f),
@@ -37,6 +41,7 @@ public class SimulationManager : MonoBehaviour {
 			new Vector2( -0.94f , 0.07f),
 			new Vector2( -1.29f , 1.00f),*/
 
+			/*
 			new Vector2( 0.54f, -0.39f),
 			new Vector2( 0.62f, -1.9f),
 			new Vector2( -0.21f , -0.63f),
@@ -46,12 +51,12 @@ public class SimulationManager : MonoBehaviour {
 			new Vector2( -0.21f, 0.63f),
 			new Vector2( 0.62f , 1.9f),
 			new Vector2( 0.54f, 0.39f),
-			new Vector2( 2.0f , 0.0f),
+			new Vector2( 2.0f , 0.0f),*/
 
-			//new Vector2( -2f ,0f),
-			//new Vector2( -2f, 4f),
-			//new Vector2( 2, 4f),
-			//new Vector2( 2f , 0f),
+			new Vector2( -1f ,0f),
+			new Vector2( -1f, 1f),
+			new Vector2( 1, 1f),
+			new Vector2( 1f , 0f),
 
 			//new Vector2( -4.08f, -0.27f),
 			//new Vector2( -4.43f, 2.71f),
@@ -180,10 +185,13 @@ public class SimulationManager : MonoBehaviour {
 		}
 
 		if (Input.GetKey (KeyCode.R)) {
-			makeShitAssDiarrhea ();
-		}
-		if (polys.Count == 2) {
 			//makeShitAssDiarrhea ();
+			gjk.drawOuterMinkiDiffi(polys[0],polys[1]);
+		}
+
+
+		if (Input.GetKeyDown(KeyCode.U)) {
+			gjk.tutorialMode = ! gjk.tutorialMode;
 		}
 
 		for (int s = 0; s < polys.Count; s++) {
@@ -220,23 +228,33 @@ public class SimulationManager : MonoBehaviour {
 		}
 
 
+		foreach (GameObject gameobj in FindObjectsOfType<GameObject>()) {
+			if (gameobj.name == "TutorialDot"){
+				Destroy (gameobj);
+			}
+		}
 
 
 		for (int i = 0; i < polys.Count; i++) {
-			for (int j = i+1; j < polys.Count; j++) {
-				bool hit =  gjk.gjk(polys [i], polys [j]);
+			for (int j = i + 1; j < polys.Count; j++) {
 
-				if (hit){
-					polys [i].hit = true;
-					polys [j].hit = true;
-				} else {
-					Vector2[] closestPoints = gjk.closestPoints (polys [i], polys [j]);
-					drawLine (closestPoints [0], closestPoints [1]);
-					dist = Vector2.Distance (closestPoints [0], closestPoints [1]);
-				}
+		
+
+
+					bool hit =  gjk.gjk(polys [i], polys [j]);
+
+					if (hit) {
+						polys [i].hit = true;
+						polys [j].hit = true;
+					} else {
+						Vector2[] closestPoints = gjk.closestPoints (polys [i], polys [j]);
+						drawLine (closestPoints [0], closestPoints [1]);
+						dist = Vector2.Distance (closestPoints [0], closestPoints [1]);
+					}
+
 
 			}
-
+			
 			if (polys[i].hit) {
 				polys [i].GetComponent<Renderer> ().material.color = Color.red;
 			} else {
@@ -258,87 +276,59 @@ public class SimulationManager : MonoBehaviour {
 
 
 	void makeShitAssDiarrhea(){
-		foreach(GameObject sph in GameObject.FindGameObjectsWithTag("Player")){
+		/*foreach(GameObject sph in GameObject.FindGameObjectsWithTag("Player")){
 			Destroy (sph);
+		}*/
+
+		foreach (GameObject line in OuterLines) {
+			line.GetComponent<LineRenderer>().numPositions = 0;
+			Destroy (line);
 		}
 
-		stupidAssMinkiTriangle = new List<Vector2>();
+		OuterLines = new List<GameObject> ();
+
+		foreach (Polygon p1 in polys[0].parts) {
+			foreach (Polygon p2 in polys[1].parts) {
+				List<Vector2> stupidAssMinkiTriangle = new List<Vector2> ();
+
+				foreach (Vector2 v1 in p1.getVertices()) {
+					foreach (Vector2 v2 in p2.getVertices()) {
+						stupidAssMinkiTriangle.Add (v1 - v2);
+					}
+				}
+
+				List<Vector3> outerPoints = gjk.jarvis (stupidAssMinkiTriangle);
+				outerPoints.Add (outerPoints [0]);
+
+				GameObject lineObj = new GameObject();
+				LineRenderer line = lineObj.AddComponent<LineRenderer> ();
+				line.material = new Material (Shader.Find ("Particles/Additive"));
+				line.widthMultiplier = 0.03f;
+				line.numPositions = outerPoints.Count;
+				line.SetPositions (outerPoints.ToArray ());
+				OuterLines.Add (lineObj); 
+			}
+		}
+
+		/*stupidAssMinkiTriangle = new List<Vector2>();
+
 		foreach (Vector2 v in polys[0].getVertices()) {
 			foreach (Vector2 w in polys[1].getVertices()) {
 				stupidAssMinkiTriangle.Add (v - w);
-				GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-				sphere.transform.localScale = new Vector3(0.1f,0.1f,0.1f);
-				sphere.transform.position = v - w;
-				sphere.tag = "Player";
+				//GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+				//sphere.transform.localScale = new Vector3(0.1f,0.1f,0.1f);
+				//sphere.transform.position = v - w;
+				//sphere.tag = "Player";
 			}
 		}
 
-		outerPoints = jarvis (stupidAssMinkiTriangle);
+		outerPoints = gjk.jarvis (stupidAssMinkiTriangle);
 		outerPoints.Add (outerPoints [0]);
 
 		minkiDinkiLine.numPositions = outerPoints.Count;
-		minkiDinkiLine.SetPositions (outerPoints.ToArray());
+		minkiDinkiLine.SetPositions (outerPoints.ToArray());*/
 	}
 
-	/*bool GJK(Polygon p1, Polygon p2){
-		for (int i = 0; i < p1.parts.Count; i++) {
-			for (int j = 0; j < p2.parts.Count; j++) {
-				if (gjk.GARB (p1.parts [i], p2.parts [j])) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
 
-	void drawShortestLine(Polygon p1, Polygon p2){
-		Vector2[] closestPoints = new Vector2[]{Vector2.zero,Vector2.zero};
-		float dist = Mathf.Infinity;
-
-		for (int i = 0; i < p1.parts.Count; i++) {
-			for (int j = 0; j < p2.parts.Count; j++) {
-				Vector2[] newPoints = gjk.BARG(p1.parts[i], p2.parts[j]);
-				float newDist = Vector2.Distance(newPoints [0], newPoints [1]);
-				if (newDist < dist){
-					closestPoints = newPoints;
-					dist = newDist;
-				}
-			}
-		}
-
-		drawLine (closestPoints [0], closestPoints [1]);
-		this.dist = dist;
-	}*/
-
-	List<Vector3> jarvis(List<Vector2> points){
-		Vector3 currentPoint = points [0];
-		foreach (Vector2 point in points){
-			if (point.x < currentPoint.x) {
-				currentPoint = point;
-			}
-		}
-
-		List<Vector3> P = new List<Vector3> ();
-
-		for(int i = 0; i < points.Count; i++){
-			P.Add(currentPoint);
-			Vector3 endpoint = points [0];
-			foreach (Vector2 point in points){
-				if (endpoint == currentPoint || toTheRight(P[i], point, endpoint)){
-					endpoint = point;
-				}
-			}
-			currentPoint = endpoint;
-			if (endpoint == P[0]){
-				return P;
-			}
-		}
-
-		return new List<Vector3> (){Vector3.zero};
-	}
-
-	bool toTheRight(Vector3 prev, Vector3 curr, Vector3 next) {
-		return (next.y - prev.y) * (curr.x-prev.x) < (next.x - prev.x) * (curr.y-prev.y);
-	}
 
 }

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 public class Polygon : MonoBehaviour {
 
@@ -37,15 +38,32 @@ public class Polygon : MonoBehaviour {
 		filter.mesh = msh;
 
 		//Concave Split TM
-		ConcaveSplit a = new ConcaveSplit ();
+
 		Vector2[] v2 = new Vector2[vertices.Length];
 		for (int i = 0; i < vertices.Length; i++) {
 			v2 [i] = new Vector2(vertices[i].x, vertices[i].y);
 		}
-		partVertexIndices = a.divide(v2);
-
+		//partVertexIndices = a.divide(v2);
+		safeDivide (v2);
 		Update ();
 	
+	}
+
+	void safeDivide(Vector2[] v) {
+		ConcaveSplit a = new ConcaveSplit ();
+		int time = 1000;
+		ManualResetEvent wait = new ManualResetEvent (false);
+		Thread work = new Thread (new ThreadStart (() => {
+			partVertexIndices = a.divide (v);
+			wait.Set ();
+		}));
+		work.Start ();
+		bool correct = wait.WaitOne (time);
+		if (!correct) {
+			work.Abort ();
+			partVertexIndices = null;
+			return;
+		}
 	}
 
 	void Start () {
@@ -60,16 +78,18 @@ public class Polygon : MonoBehaviour {
 		vertices = vertices.Distinct ().ToArray();
 
 		parts = new List<Polygon> ();
+		if (partVertexIndices != null) {
+			foreach (List<int> singPoly in partVertexIndices) {
+				List<Vector3> partpart = new List<Vector3> ();
+				foreach (int verti in singPoly) {
+					partpart.Add (vertices [verti]);
+				}
 
-		foreach (List<int> singPoly in partVertexIndices) {
-			List<Vector3> partpart = new List<Vector3>();
-			foreach(int verti in singPoly){
-				partpart.Add(vertices[verti]);
+				Polygon part = gameObject.AddComponent<Polygon>() as Polygon;
+				part.vertices = partpart.ToArray ();
+				parts.Add (part);
+
 			}
-
-			Polygon part = new Polygon ();
-			part.vertices = partpart.ToArray();
-			parts.Add (part);
 		}
 
 	}
