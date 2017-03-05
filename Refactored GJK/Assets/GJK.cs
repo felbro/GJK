@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using Unitilities.Tuples;
 
 public class GJK : MonoBehaviour {
 	public Vector2 dir;
@@ -10,46 +10,68 @@ public class GJK : MonoBehaviour {
 	public bool tutorialMode = false;
 	private LineRenderer line;
 	public List<GameObject> OuterLines;
+	public SimulationManager sim;
+	public int maxIterations;
+	public int currIterations;
+
 
 	GameObject lineobject;
 
 
 
 	public bool gjk(Polygon p1, Polygon p2){
+		currIterations = 0;
+		LineRenderer outline = null;
+		if (tutorialMode) {
+			Destroy (lineobject);
+			lineobject = new GameObject ("MinkLine");
 
-		Destroy (lineobject);
-		lineobject = new GameObject ();
+			line = lineobject.AddComponent<LineRenderer> ();
+			line.GetComponent<Renderer> ().material.color = Color.magenta;
+			line.widthMultiplier = 0.05f;
+			line.numPositions = 0;
 
-		line = lineobject.AddComponent<LineRenderer> ();
-		line.GetComponent<Renderer> ().material.color = Color.magenta;
-		line.widthMultiplier = 0.05f;
-		line.numPositions = 0;
+			drawOuterMinkiDiffi (p1, p2);
+			outline = OuterLines [0].GetComponent<LineRenderer> ();
 
-		drawOuterMinkiDiffi (p1, p2);
-		LineRenderer outline = OuterLines [0].GetComponent<LineRenderer> ();
+		}
+			//LineRenderer outline = OuterLines [0].GetComponent<LineRenderer> ();
+		
+
+
+		int fst = sim.polys.IndexOf (p1);
+		int snd = sim.polys.IndexOf (p2);
+		if (snd < fst) {
+			int tmp = fst;
+			fst = snd;
+			snd = tmp;
+		}
 
 		for (int i = 0; i < p1.parts.Count; i++) {
 			for (int j = 0; j < p2.parts.Count; j++) {
-				foreach (GameObject gameobj in FindObjectsOfType<GameObject>()) {
-					if (gameobj.name == "TutorialDot"){
-						Destroy (gameobj);
+				if (currIterations <= maxIterations) {
+				
+					if (tutorialMode && currIterations < maxIterations) {	
+						outline = OuterLines [i * p2.parts.Count + j].GetComponent<LineRenderer> ();
+						outline.GetComponent<Renderer> ().material.color = Color.red;
+						for (int p = 0; p < outline.numPositions; p++) {
+							outline.SetPosition (p, new Vector3 (outline.GetPosition (p).x, outline.GetPosition (p).y, -0.01f));
+						}
+					}
+					if (GARB (sim.polys [fst], sim.polys [snd], p1.parts [i], p2.parts [j])) {
+						return true;
+					}
+					if (tutorialMode && currIterations < maxIterations) {
+						outline.GetComponent<Renderer> ().material.color = Color.white;
+						for (int p = 0; p < outline.numPositions; p++) {
+							outline.SetPosition (p, new Vector3 (outline.GetPosition (p).x, outline.GetPosition (p).y, 0));
+						}
 					}
 				}
-					
-				outline = OuterLines [i * p2.parts.Count + j].GetComponent<LineRenderer> ();
-				outline.GetComponent<Renderer> ().material.color = Color.red;
-
-				if (GARB (p1.parts [i], p2.parts [j])) {
-					return true;
-				}
-				outline.GetComponent<Renderer> ().material.color = Color.white;
 			}
 		}
 
-		outline.GetComponent<Renderer> ().material.color = Color.red;
 		return false;
-
-
 	}
 
 	public Vector2[] closestPoints(Polygon p1, Polygon p2){
@@ -73,30 +95,57 @@ public class GJK : MonoBehaviour {
 
 
 	/** Are the GA intersecting the RB */
-	public	bool  GARB (Polygon p1, Polygon p2){
-		List<Vector2> tutorialPoints = new List<Vector2> ();
+	public	bool  GARB (Polygon P1, Polygon P2, Polygon p1, Polygon p2){
+		//List<Vector2> tutorialPoints = new List<Vector2> ();
 		dir = p1.vertices [0] - p2.vertices [0];
 
 		List<MinkDiff> simplex = new List<MinkDiff> ();
 		MinkDiff a = support (p1, p2, dir);
+		a.sim = sim;
 		simplex.Add (a);
-		tutorialPoints.Add (a.diff);
-		a.draw (0);
+
+
+
+
+		int fst = sim.polys.IndexOf (P1);
+		int snd = sim.polys.IndexOf (P2);
+
+
+		Tuple<Tuple<int,int>,Tuple<int,int>> tp = 
+			new Tuple<Tuple<int,int>,Tuple<int,int>> (new Tuple<int, int> (fst, P1.parts.IndexOf (p1)), new Tuple<int, int> (snd, P2.parts.IndexOf (p2)));
+		if (tutorialMode) {
+
+
+			//tutorialPoints.Add (a.diff);
+			a.draw (0, tp);
+		}
 		dir = -1 * dir;
 
 		loopcounter = 0;
 
 		while (true && loopcounter < 1000 && true && !false || false) {
+			if (tutorialMode) {
+				currIterations++;
+				if (currIterations > maxIterations) {
+					return false;
+				}
+			}
 				a = support (p1, p2, dir);
-				simplex.Add (a);
-				tutorialPoints.Add (a.diff);
-				a.draw (loopcounter + 1);
 
-				List<Vector3> minkidiffipoints = jarvis (tutorialPoints);
+			a.sim = sim;
+				simplex.Add (a);
+			if (tutorialMode) {
+				//tutorialPoints.Add (a.diff);
+			a.draw (loopcounter + 1,tp);
+			}
+
+			if (tutorialMode) {
+				//List<Vector3> minkidiffipoints = jarvis (tutorialPoints);
+				List<Vector3> minkidiffipoints = jarvis(simplex);
 				minkidiffipoints.Add (minkidiffipoints [0]);
 				line.numPositions = minkidiffipoints.Count;
 				line.SetPositions (minkidiffipoints.ToArray ());
-
+			}
 				if (!canContainOrigin (a.diff, dir)) {
 					return false;
 				} else if (containsOrigin (simplex)) {
@@ -191,10 +240,7 @@ public class GJK : MonoBehaviour {
 
 
 	MinkDiff support (Polygon p1, Polygon p2, Vector2 dir){
-		//GameObject a = new GameObject ("MinkDiff");
-		//MinkDiff minkdiff = a.AddComponent<MinkDiff>() as MinkDiff;
-		//Destroy (a);
-		//return minkdiff;
+		
 
 		GameObject a = new GameObject ("MinkDiff");
 		MinkDiff minkdiff = a.AddComponent<MinkDiff>() as MinkDiff;
@@ -253,6 +299,15 @@ public class GJK : MonoBehaviour {
 		return false;
 	}	
 
+	public List<Vector3> jarvis(List<MinkDiff> points){
+		List<Vector2> temp = new List<Vector2> ();
+		foreach (MinkDiff point in points) {
+			temp.Add (point.diff);
+		}
+
+		return jarvis (temp);
+	}
+
 	public List<Vector3> jarvis(List<Vector2> points){
 		Vector3 currentPoint = points [0];
 		foreach (Vector2 point in points){
@@ -287,8 +342,11 @@ public class GJK : MonoBehaviour {
 	public void drawOuterMinkiDiffi(Polygon poly1, Polygon poly2){
 		if (OuterLines != null) {
 			foreach (GameObject line in OuterLines) {
-				line.GetComponent<LineRenderer> ().numPositions = 0;
+				if (line != null) {
+					line.GetComponent<LineRenderer> ().numPositions = 0;
+				}
 				Destroy (line);
+
 			}
 		}
 
@@ -307,7 +365,7 @@ public class GJK : MonoBehaviour {
 				List<Vector3> outerPoints = jarvis (stupidAssMinkiTriangle);
 				outerPoints.Add (outerPoints [0]);
 
-				GameObject lineObj = new GameObject();
+				GameObject lineObj = new GameObject("LineBruv");
 				LineRenderer line = lineObj.AddComponent<LineRenderer> ();
 				line.GetComponent<Renderer> ().material.color = Color.white;
 				line.widthMultiplier = 0.03f;

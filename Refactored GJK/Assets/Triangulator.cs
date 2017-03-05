@@ -1,6 +1,11 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
-
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+* This is a class that is borrowed from the internetz						 *
+* http://wiki.unity3d.com/index.php?title=Triangulator 						 *
+* It is only used to divide the original into triangles so that the polygon  *
+* can be seen with a meshfilter	at polygon initialisation					 *
+* * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * * * * * * * */
 public class Triangulator
 {
 	private List<Vector2> m_points = new List<Vector2>();

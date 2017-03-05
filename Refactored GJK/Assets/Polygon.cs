@@ -4,14 +4,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
+/* * * * * * * * * * * * * * * * * * * * * *
+ * Class that holds and handles a polygon  *
+ * * * * * * * * * * * * * * * * * * * * * */
+
 public class Polygon : MonoBehaviour {
 
 	public Vector3[] vertices;
-	public bool hit;
-	public List<List<int>> partVertexIndices;
+	//public bool hit;
+	private List<List<int>> partVertexIndices;
 	public List<Polygon> parts;
+	public HashSet<Polygon> touching;
 
 
+	/*
+	 * Constructor-like method that creates the polygon with the vertices in verticesList and 
+	 * divides the polygon into convex shapes if it is originally concave
+	 */
 	public void addVertices(List<Vector2> verticesList) {
 		Vector2[] vertices2D = verticesList.ToArray();
 
@@ -38,26 +47,29 @@ public class Polygon : MonoBehaviour {
 		filter.mesh = msh;
 
 		//Concave Split TM
-
 		Vector2[] v2 = new Vector2[vertices.Length];
 		for (int i = 0; i < vertices.Length; i++) {
 			v2 [i] = new Vector2(vertices[i].x, vertices[i].y);
 		}
-		//partVertexIndices = a.divide(v2);
+
 		safeDivide (v2);
 		Update ();
-	
 	}
 
+	/* 
+	 * Divides the polygon with vertices v into convex shapes 
+	 * If the division cannot be made within 1 second it moves on instead of hogging the program forever.
+	 */
 	void safeDivide(Vector2[] v) {
 		ConcaveSplit a = new ConcaveSplit ();
 		int time = 1000;
 		ManualResetEvent wait = new ManualResetEvent (false);
 		Thread work = new Thread (new ThreadStart (() => {
 			partVertexIndices = a.divide (v);
-			wait.Set ();
+			wait.Set();
 		}));
 		work.Start ();
+
 		bool correct = wait.WaitOne (time);
 		if (!correct) {
 			work.Abort ();
@@ -66,16 +78,23 @@ public class Polygon : MonoBehaviour {
 		}
 	}
 
-	void Start () {
-		
-	}
-
+	/*
+	 * Update gets called every frame.
+	 * It updates the list of vertices of this polygon and each
+	 * of its parts to account for any movement that might have occured.
+	 */
 	void Update () {
 		vertices = GetComponent <MeshFilter> ().mesh.vertices;
 		for (int i = 0; i < vertices.Length; i++) {
 			vertices [i] = transform.TransformPoint (vertices [i]);
 		}
 		vertices = vertices.Distinct ().ToArray();
+
+		if (parts != null) {
+			foreach (Polygon poly in parts) {
+				Destroy (poly);
+			}
+		}
 
 		parts = new List<Polygon> ();
 		if (partVertexIndices != null) {
@@ -88,18 +107,22 @@ public class Polygon : MonoBehaviour {
 				Polygon part = gameObject.AddComponent<Polygon>() as Polygon;
 				part.vertices = partpart.ToArray ();
 				parts.Add (part);
-
 			}
 		}
-
 	}
 
+	/* 
+	 * Returns the positions of the polygon's vertices 
+	 */
 	public Vector3[] getVertices() {
 		return vertices;
 	}
 
+	/*
+	 * Returns the vertex of the polygon that is the furthest away from 
+	 * its center in the specified direction
+	 */
 	public Vector2 getFurthest(Vector2 dir){
-
 		double maxDist = Vector3.Dot (dir, vertices[0]);
 		int furthest = 0;
 
@@ -109,9 +132,8 @@ public class Polygon : MonoBehaviour {
 				furthest = i;
 				maxDist = dottis;
 			}
-
 		}
-		return vertices[furthest];
 
+		return vertices[furthest];
 	}
 }
