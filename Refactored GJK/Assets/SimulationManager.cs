@@ -84,8 +84,10 @@ public class SimulationManager : MonoBehaviour {
 
 		if(gjk.tutorialMode){
 			if (Input.GetKeyDown(KeyCode.K)) {
-				iterationSteps++;
-				stepLabel.text = "Step : " + iterationSteps;
+				if (!gjk.done) {
+					iterationSteps++;
+					stepLabel.text = "Step : " + iterationSteps;
+				}
 			}
 
 			if (Input.GetKeyDown(KeyCode.J)) {
@@ -165,7 +167,11 @@ public class SimulationManager : MonoBehaviour {
 			}
 		}
 
-		if (done.Count > 0) {
+		if (gjk.tutorialMode && !gjk.done) {
+			for (int i = 0; i < polys.Count; i++) {
+				polys [i].GetComponent<Renderer> ().material.color = Color.yellow;
+			}
+		} else if (done.Count > 0) {
 			for (int i = 0; i < polys.Count; i++) {
 				if (polys [i].touching.Count > 0) {
 					polys [i].GetComponent<Renderer> ().material.color = Color.red;
@@ -181,11 +187,14 @@ public class SimulationManager : MonoBehaviour {
 
 
 	void movementKey() {
+		bool didMove = false;
+
 		if (Input.GetKey (KeyCode.A)) {
 			if (selectedPoly == null)
 				return;
 			selectedPoly.gameObject.transform.position += new Vector3 (-0.05f, 0);
 			moved.Enqueue (selectedPoly);
+			didMove = true;
 		}
 
 		if (Input.GetKey (KeyCode.W)) {
@@ -193,6 +202,7 @@ public class SimulationManager : MonoBehaviour {
 				return;
 			selectedPoly.gameObject.transform.position += new Vector3 (0, 0.05f);
 			moved.Enqueue (selectedPoly);
+			didMove = true;
 		}
 
 		if (Input.GetKey (KeyCode.S)) {
@@ -200,6 +210,7 @@ public class SimulationManager : MonoBehaviour {
 				return;
 			selectedPoly.gameObject.transform.position += new Vector3 (0, -0.05f);
 			moved.Enqueue (selectedPoly);
+			didMove = true;
 		}
 
 		if (Input.GetKey (KeyCode.D)) {
@@ -207,6 +218,7 @@ public class SimulationManager : MonoBehaviour {
 				return;
 			selectedPoly.gameObject.transform.position += new Vector3 (0.05f, 0);
 			moved.Enqueue (selectedPoly);
+			didMove = true;
 
 		}
 
@@ -215,6 +227,7 @@ public class SimulationManager : MonoBehaviour {
 				return;
 			selectedPoly.gameObject.transform.Rotate(new Vector3(0, 0, 0.5f));
 			moved.Enqueue (selectedPoly);
+			didMove = true;
 		}
 
 		if (Input.GetKey (KeyCode.E)) {
@@ -222,6 +235,12 @@ public class SimulationManager : MonoBehaviour {
 				return;
 			selectedPoly.gameObject.transform.Rotate(new Vector3(0, 0, -0.5f));
 			moved.Enqueue (selectedPoly);
+			didMove = true;
+		}
+
+		if (didMove && gjk.tutorialMode) {
+			iterationSteps = 0;
+			stepLabel.text = "Step : 0";
 		}
 	}
 
@@ -326,6 +345,9 @@ public class SimulationManager : MonoBehaviour {
 					if (g.name == "TutorialDot" || g.name == "MinkDiff" || g.name == "LineBruv" || g.name == "MinkLine") {
 						Destroy (g);
 					}
+				}
+				if (selectedPoly != null) {
+					moved.Enqueue (selectedPoly);
 				}
 			}
 		}

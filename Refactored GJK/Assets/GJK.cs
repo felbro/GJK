@@ -13,6 +13,7 @@ public class GJK : MonoBehaviour {
 	public SimulationManager sim;
 	public int maxIterations;
 	public int currIterations;
+	public bool done = false;
 
 
 	GameObject lineobject;
@@ -20,6 +21,7 @@ public class GJK : MonoBehaviour {
 
 
 	public bool gjk(Polygon p1, Polygon p2){
+		done = false;
 		currIterations = 0;
 		LineRenderer outline = null;
 		if (tutorialMode) {
@@ -59,6 +61,7 @@ public class GJK : MonoBehaviour {
 						}
 					}
 					if (GARB (sim.polys [fst], sim.polys [snd], p1.parts [i], p2.parts [j])) {
+						done = true;
 						return true;
 					}
 					if (tutorialMode && currIterations < maxIterations) {
@@ -70,7 +73,7 @@ public class GJK : MonoBehaviour {
 				}
 			}
 		}
-
+		done = currIterations <= maxIterations;
 		return false;
 	}
 
@@ -96,6 +99,7 @@ public class GJK : MonoBehaviour {
 
 	/** Are the GA intersecting the RB */
 	public	bool  GARB (Polygon P1, Polygon P2, Polygon p1, Polygon p2){
+		
 		//List<Vector2> tutorialPoints = new List<Vector2> ();
 		dir = p1.vertices [0] - p2.vertices [0];
 
@@ -113,8 +117,12 @@ public class GJK : MonoBehaviour {
 
 		Tuple<Tuple<int,int>,Tuple<int,int>> tp = 
 			new Tuple<Tuple<int,int>,Tuple<int,int>> (new Tuple<int, int> (fst, P1.parts.IndexOf (p1)), new Tuple<int, int> (snd, P2.parts.IndexOf (p2)));
-		if (tutorialMode) {
-
+		if (tutorialMode && currIterations < maxIterations) {
+			foreach (GameObject gameobj in GameObject.FindObjectsOfType<GameObject>()) {
+				if (gameobj.name == "TutorialDot") {
+					Destroy (gameobj);
+				}
+			}
 
 			//tutorialPoints.Add (a.diff);
 			a.draw (0, tp);

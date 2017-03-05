@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using System.Threading;
-
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Class for dividing concave objects into several convex 						   *
- * 																																			 *
- * @author Felix Broberg, Natalie Axelsson, Rodrigo Retuerto						 *
- * @version 2017-03-05																									 *
+ * Class for dividing concave objects into several convex				 *
+ * 																		 *
+ * @author Felix Broberg, Natalie Axelsson, Rodrigo Retuerto			 *
+ * @version 2017-03-05													 *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 public class ConcaveSplit{
 	private Vector2[] points; // Points of the object

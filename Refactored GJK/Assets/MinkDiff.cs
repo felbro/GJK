@@ -2,9 +2,9 @@
 using Unitilities.Tuples;
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * Class that holds a point of the Minkowski triangle and its ancestors  *
- * 																																			 *
- * @author Rodrigo Retuerto, Natalie Axelsson, Felix Broberg						 *
- * @version 2017-03-05																									 *
+ * 																		 *
+ * @author Rodrigo Retuerto, Natalie Axelsson, Felix Broberg			 *
+ * @version 2017-03-05													 *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 public class MinkDiff : MonoBehaviour {
 	public Vector2 s1Point;

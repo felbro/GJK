@@ -3,11 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-
-/* * * * * * * * * * * * * * * * * * * * * *
- * Class that holds and handles a polygon  *
- * * * * * * * * * * * * * * * * * * * * * */
-
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+ * Class that holds and handles a polygon								 *
+ * @author Rodrigo Retuerto, Natalie Axelsson, Felix Broberg			 *
+ * @version 2017-03-05													 *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 public class Polygon : MonoBehaviour {
 
 	public Vector3[] vertices;
