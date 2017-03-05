@@ -4,12 +4,12 @@ using System.Linq;
 using UnityEngine;
 using System.Threading;
 
-/**
-* Class for dividing concave objects into
-* several convex.
-*
-* @author	Felix Broberg 2017-02-27
-*/
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * Class for dividing concave objects into several convex 						   *
+ * 																																			 *
+ * @author Felix Broberg, Natalie Axelsson, Rodrigo Retuerto						 *
+ * @version 2017-03-05																									 *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 public class ConcaveSplit{
 	private Vector2[] points; // Points of the object
 	private List< List<int> > convexShapes; // List of convex objects
@@ -44,6 +44,10 @@ public class ConcaveSplit{
 		return convexShapes;
 	}
 
+	/**
+	* Iterates through the edges to ensure all shapes
+	* are present in the returned list.
+	*/
 	void ctrlCheck() {
 		foreach (KeyValuePair<int, List<int>> pair in edges) {
 			foreach (int next in pair.Value) {
@@ -52,6 +56,9 @@ public class ConcaveSplit{
 		}
 	}
 
+	/**
+	* Helper function to ctrlCheck. Calls itself recursively.
+	*/
 	void ctrlHelp(int prev, int current, int goal, List<int> path){
 		if (current == goal) {
 			path.Add (goal);
@@ -72,6 +79,11 @@ public class ConcaveSplit{
 		}
 	}
 
+	/**
+	* Adds a convex shapes to the list of convex shapes.
+	*
+	* @param toAdd List of vertices to add.
+	**/
 	void addShape(List<int> toAdd){
 		toAdd.Sort();
 		bool add = true;
@@ -101,14 +113,10 @@ public class ConcaveSplit{
 		visited.Add(start);
 		curr.Add(start);
 
-
 		while (curr.Count > 0) {
 			if (curr.Count < 2) {
-
-
-
+				// Adds next vertex to the list.
 				addToCurrVisited((curr[0]+1)% points.Length);
-
 				visited.Add((curr[0]+1)% points.Length);
 				curr.Add((curr[0]+1) % points.Length);
 
@@ -118,7 +126,7 @@ public class ConcaveSplit{
 			int next = -1;
 
 			if (curr.Count == 2) {
-
+				// If there exists a path from the current vertex to another
 				if (visited.Contains(current) && edges.ContainsKey(current)) {
 					next = rightVertex(prev,current);
 
@@ -135,7 +143,11 @@ public class ConcaveSplit{
 	}
 
 
-
+	/**
+	* Wrapper function. Adds a vertex to the list
+	* of currently visited vertices if it's not previously
+	* visited
+	**/
 	void addToCurrVisited(int i) {
 		if (!visited.Contains(i))
 			currVisited.Add(i);
@@ -147,7 +159,8 @@ public class ConcaveSplit{
 	*
 	* @param prev	previous vertex
 	* @param current current vertex
-	* @curr	curr 	list of vertices so far that are convex
+	* @param next next vertex
+	* @param last True if it's the last vertex in a shape. False otherwise
 	*/
 	void threePoints(int prev, int current, int next,bool last) {
 
@@ -173,20 +186,19 @@ public class ConcaveSplit{
 	* vertices, this function is called. Checks if done splitting, or
 	* Continues.
 	*
+	* @param prev			the previous vertex
 	* @param current	the current vertex
 	* @param next			the next vertex
-	* @param curr			List of vertices currently forming a convex shape
 	* @param last 		True if this could be the last vertex. False elsewise
 	*/
 	void right(int prev,int current, int next, bool last) {
 
+		//Done with shape
 		if (last) {
-			//convexShapes.Add(new List<int>(curr));
 			addToShapes(new List<int>(curr));
 			curr.Clear();
 			currVisited.Clear();
 		}
-
 		else if (visited.Contains(next) ) {
 			itsvisited (prev, current, next);
 
@@ -199,12 +211,22 @@ public class ConcaveSplit{
 		}
 	}
 
+	/**
+	* Called if the next vertex has previously been
+	* visited. Checks if there exists a path from
+	* the vertex to another.
+	*
+	* @param prev	The previous vertex
+	* @param current The current vertex
+	* @param next		 The next vertex
+	**/
 	void itsvisited(int prev,int current,int next) {
 
 		if (!curr.Contains (next)) {
 
 			// must be edge in already done piece
 			if (!edges.ContainsKey(next)) {
+				// If there exists a path from the current piece
 				if (edges.ContainsKey(current)) {
 					int right = rightVertex(prev,current);
 					if (toTheRight(prev,current,right)) {
@@ -225,9 +247,9 @@ public class ConcaveSplit{
 			// Must have another edge
 			else {
 				curr.Add (next);
-
+				// If we can close the vertex
 				if (edges[next].Contains(curr[0])){
-					//MAYBE TRUE
+
 					threePoints(current,next,curr[0],false);
 				}
 				else {
@@ -241,12 +263,22 @@ public class ConcaveSplit{
 
 
 			}
-		} else {
+		}
+		// Could be a convex shape
+		else {
 			threePoints(current,next,curr[(curr.IndexOf(next)+1)%curr.Count],true);
 		}
 	}
 
-
+	/**
+	* Finds the closest vertex to the right of prev
+	* from curr connected through an internal edge
+	*
+	* @param prev The previous vertex
+	* @param curr The current vertex
+	* @return the rightmost vertex. If no such
+	* vertex exists, -1 is returned.
+	**/
 	int rightVertex(int prev, int curr) {
 		int temp = -1;
 		int dist = 2140000000;
@@ -274,14 +306,15 @@ public class ConcaveSplit{
 	*
 	* @param prev			the previous vertex
 	* @param current	the current vertex
-	* @param curr			List of vertices currently forming a convex shape
 	*/
 	void left(int prev, int current) {
 		int cont = findClosestRightVertex(prev,current);
 		if (cont == -1) return;
 
 		if (visited.Contains(cont)) {
+
 			if (curr.Contains (cont)) {
+				//Backtrack
 				List <int> temp = new List<int>();
 
 				int i = curr.Count-1;
@@ -305,7 +338,6 @@ public class ConcaveSplit{
 				temp.Reverse ();
 				curr = new List<int> (temp);
 				foreach(int j in curr) {
-					//currVisited.Add(j);
 					addToCurrVisited (j);
 				}
 				threePoints(current,cont,curr[1],true);
@@ -323,9 +355,6 @@ public class ConcaveSplit{
 
 
 		}
-
-
-
 		else {
 			curr.Add(cont);
 			addToCurrVisited(cont);
@@ -343,7 +372,13 @@ public class ConcaveSplit{
 		return (x % y + y) % y;
 	}
 
-
+	/**
+	* Adds a list of vertices to the list
+	* of convex shapes. Also adds the internal
+	* edges between the vertices.
+	*
+	* @param toAdd	list of vertices
+	**/
 	void addToShapes(List<int> toAdd) {
 		toAdd.Sort();
 		for (int i = 0; i < toAdd.Count; i++) {
@@ -367,7 +402,7 @@ public class ConcaveSplit{
 				if (!edges [toAdd [i]].Contains (posMod)) {
 					edges [toAdd [i]].Add (posMod);
 				}
-			} 
+			}
 
 		}
 		addShape(toAdd);
@@ -411,7 +446,7 @@ public class ConcaveSplit{
 			}
 		}
 
-
+		//Iterate over inner edges
 		foreach (KeyValuePair<int,List<int>> i in edges) {
 			for (int j = 0; j < i.Value.Count; j++) {
 				float retval = intersecting(points[a],points[b],points[i.Key],points[i.Value[j]],true);
@@ -422,7 +457,7 @@ public class ConcaveSplit{
 			}
 		}
 
-		//CUTS ITSELF
+		//If it cuts itself, backtrack
 		for (int i = 0; i < curr.Count; i++) {
 
 			if (intersecting(points[b],points[vertex],points[curr[i]],points[curr[(i+1)%curr.Count]],false) == 1) {
@@ -434,6 +469,18 @@ public class ConcaveSplit{
 		return vertex;
 	}
 
+	/**
+	* Sets the vertex and distance. If the new edge cuts another edge,
+	* finds the next vertex that works.
+	*
+	* @param a previous vertex
+	* @param b current vertex
+	* @param i part of line that is cut
+	* @param j part of line that is cut
+	* @param vertex, reference to vertex in "findClosestRightVertex"
+	* @param distance, reference to distance in "findClosestRightVertex"
+	* @param retval, 	distance from prev-current line to line that it cuts
+	**/
 	void assignVertexDist(int a, int b, int i, int j,ref int vertex, ref float distance,float retval) {
 		int tempvertex;
 
@@ -441,7 +488,6 @@ public class ConcaveSplit{
 			tempvertex = i;
 		}
 		else {
-			//tempvertex = (i+1)%points.Length;
 			tempvertex = j;
 		}
 		if(!cutsother(b,tempvertex)) {
@@ -465,7 +511,12 @@ public class ConcaveSplit{
 
 
 
-	// True if a,b cuts other edges
+	/**
+	* Checks if two vertices cuts any outer edges
+	*
+	* @param a first vertex
+	* @param b second vertex
+	**/
 	bool cutsother(int a, int b) {
 		for (int i = 0; i < points.Length; i++) {
 			if (a != i && a != (i + 1) % points.Length && b != i && b != (i + 1) % points.Length) {
@@ -476,7 +527,13 @@ public class ConcaveSplit{
 		return false;
 	}
 
-
+	/**
+	* Called if the line cuts itself. Backtracks.
+	*
+	* @param next the next vertex
+	* @param prev the previous vertex
+	* @param current the current vertex
+	**/
 	void backitup(int next,int prev,int current) {
 		if (!notDone.Contains(curr[0]))
 			notDone.Enqueue(curr[0]);
@@ -485,7 +542,6 @@ public class ConcaveSplit{
 			if(currVisited.Contains(curr[i])){
 				visited.Remove(curr[i]);
 			}
-			//curr.RemoveAt(i);
 		}
 
 		currVisited.Clear();
