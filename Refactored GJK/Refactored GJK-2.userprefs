@@ -1,0 +1,16 @@
+﻿<Properties StartupItem="Assembly-CSharp.csproj">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Unity.Instance.Unity Editor" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/SimulationManager.cs">
+    <Files>
+      <File FileName="Assets/Polygon.cs" Line="69" Column="15" />
+      <File FileName="Assets/GJK.cs" Line="58" Column="68" />
+      <File FileName="Assets/SimulationManager.cs" Line="117" Column="1" />
+      <File FileName="Assets/ConcaveSplit.cs" Line="19" Column="43" />
+      <File FileName="Assets/MinkDiff.cs" Line="19" Column="25" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>

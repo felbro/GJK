@@ -20,7 +20,7 @@ public class SimulationManager : MonoBehaviour {
 	private Polygon prevMoved;
 	private HashSet<Polygon> done;
 	private Dictionary<Tuple<int,int>,GameObject> closestPts;
-	public Dictionary<Tuple<Tuple<int,int>,Tuple<int,int>>,List<GameObject>> tutPts;
+	//public Dictionary<Tuple<Tuple<int,int>,Tuple<int,int>>,List<GameObject>> tutPts;
 	public int iterationSteps = 0;
 	public Text stepLabel;
 
@@ -32,14 +32,14 @@ public class SimulationManager : MonoBehaviour {
 		moved = new Queue<Polygon> ();
 		done = new HashSet<Polygon> ();
 		closestPts = new Dictionary<Tuple<int,int>,GameObject> ();
-		tutPts = new Dictionary<Tuple<Tuple<int,int>,Tuple<int,int>>,List<GameObject>>();
+		//tutPts = new Dictionary<Tuple<Tuple<int,int>,Tuple<int,int>>,List<GameObject>>();
 
 		polys = new List<Polygon> ();
 		//gjk = new GJK ();
 		GameObject a = new GameObject("GJK");
 		gjk = a.AddComponent<GJK> () as GJK;
 
-		gjk.sim = this;
+		//gjk.sim = this;
 		//List<Vector2> vertices2D = new List<Vector2>() {
 		//	
 		//	new Vector2( -1f ,0f),
@@ -131,7 +131,7 @@ public class SimulationManager : MonoBehaviour {
 				}
 
 
-				for (int i = 0; i < polys[a].parts.Count; i++) {
+				/*for (int i = 0; i < polys[a].parts.Count; i++) {
 					for (int j = 0; j < polys[b].parts.Count; j++) {
 						Tuple<Tuple<int,int>,Tuple<int,int>> tp = 
 							new Tuple<Tuple<int,int>,Tuple<int,int>> (new Tuple<int, int>(a,i), new Tuple<int, int>(b,j));
@@ -142,7 +142,7 @@ public class SimulationManager : MonoBehaviour {
 						}
 						tutPts [tp] = new List<GameObject> ();
 					}
-				}
+				}*/
 
 
 				bool hit = gjk.gjk (polys[a], polys[b]);
@@ -241,6 +241,11 @@ public class SimulationManager : MonoBehaviour {
 		if (didMove && gjk.tutorialMode) {
 			iterationSteps = 0;
 			stepLabel.text = "Step : 0";
+			foreach (GameObject gameobj in GameObject.FindObjectsOfType<GameObject>()) {
+				if (gameobj.name == "TutorialDot") {
+					Destroy (gameobj);
+				}
+			}
 		}
 	}
 

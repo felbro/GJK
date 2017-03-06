@@ -43,6 +43,8 @@ public class ConcaveSplit{
 		return convexShapes;
 	}
 
+
+
 	/**
 	* Iterates through the edges to ensure all shapes
 	* are present in the returned list.
@@ -455,9 +457,11 @@ public class ConcaveSplit{
 				}
 			}
 		}
-
+		if (vertex == -1)
+			Thread.Sleep (2000);
 		//If it cuts itself, backtrack
 		for (int i = 0; i < curr.Count; i++) {
+
 
 			if (intersecting(points[b],points[vertex],points[curr[i]],points[curr[(i+1)%curr.Count]],false) == 1) {
 

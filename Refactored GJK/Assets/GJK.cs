@@ -10,7 +10,7 @@ public class GJK : MonoBehaviour {
 	public bool tutorialMode = false;
 	private LineRenderer line;
 	public List<GameObject> OuterLines;
-	public SimulationManager sim;
+	//public SimulationManager sim;
 	public int maxIterations;
 	public int currIterations;
 	public bool done = false;
@@ -41,13 +41,13 @@ public class GJK : MonoBehaviour {
 		
 
 
-		int fst = sim.polys.IndexOf (p1);
+		/*int fst = sim.polys.IndexOf (p1);
 		int snd = sim.polys.IndexOf (p2);
 		if (snd < fst) {
 			int tmp = fst;
 			fst = snd;
 			snd = tmp;
-		}
+		}*/
 
 		for (int i = 0; i < p1.parts.Count; i++) {
 			for (int j = 0; j < p2.parts.Count; j++) {
@@ -60,7 +60,8 @@ public class GJK : MonoBehaviour {
 							outline.SetPosition (p, new Vector3 (outline.GetPosition (p).x, outline.GetPosition (p).y, -0.01f));
 						}
 					}
-					if (GARB (sim.polys [fst], sim.polys [snd], p1.parts [i], p2.parts [j])) {
+//					if (GARB (sim.polys [fst], sim.polys [snd], p1.parts [i], p2.parts [j])) {
+					if(GARB(p1,p2,p1.parts[i],p2.parts[j])){
 						done = true;
 						return true;
 					}
@@ -105,18 +106,9 @@ public class GJK : MonoBehaviour {
 
 		List<MinkDiff> simplex = new List<MinkDiff> ();
 		MinkDiff a = support (p1, p2, dir);
-		a.sim = sim;
 		simplex.Add (a);
 
 
-
-
-		int fst = sim.polys.IndexOf (P1);
-		int snd = sim.polys.IndexOf (P2);
-
-
-		Tuple<Tuple<int,int>,Tuple<int,int>> tp = 
-			new Tuple<Tuple<int,int>,Tuple<int,int>> (new Tuple<int, int> (fst, P1.parts.IndexOf (p1)), new Tuple<int, int> (snd, P2.parts.IndexOf (p2)));
 		if (tutorialMode && currIterations < maxIterations) {
 			foreach (GameObject gameobj in GameObject.FindObjectsOfType<GameObject>()) {
 				if (gameobj.name == "TutorialDot") {
@@ -125,7 +117,7 @@ public class GJK : MonoBehaviour {
 			}
 
 			//tutorialPoints.Add (a.diff);
-			a.draw (0, tp);
+			a.draw (0);
 		}
 		dir = -1 * dir;
 
@@ -140,11 +132,10 @@ public class GJK : MonoBehaviour {
 			}
 				a = support (p1, p2, dir);
 
-			a.sim = sim;
 				simplex.Add (a);
 			if (tutorialMode) {
 				//tutorialPoints.Add (a.diff);
-			a.draw (loopcounter + 1,tp);
+			a.draw (loopcounter + 1);
 			}
 
 			if (tutorialMode) {
