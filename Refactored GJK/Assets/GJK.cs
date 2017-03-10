@@ -2,7 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Unitilities.Tuples;
-
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+ * Class that performs GJK algorithm and associated methods.			 *
+ * @author Rodrigo Retuerto, Natalie Axelsson, Felix Broberg			 *
+ * @version 2017-03-05													 *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 public class GJK : MonoBehaviour {
 	public Vector2 dir;
 	public double TOL = 1e-8;
@@ -10,20 +14,21 @@ public class GJK : MonoBehaviour {
 	public bool tutorialMode = false;
 	private LineRenderer line;
 	public List<GameObject> OuterLines;
-	//public SimulationManager sim;
 	public int maxIterations;
 	public int currIterations;
 	public bool done = false;
-
-
 	GameObject lineobject;
 
-
+	/*
+	 * Method that takes in two polygons and returns true if
+	 * the polygons are intersecting and false if they are not
+	 */
 
 	public bool gjk(Polygon p1, Polygon p2){
 		done = false;
 		currIterations = 0;
 		LineRenderer outline = null;
+		//tutorial mode functionality draws lines etc
 		if (tutorialMode) {
 			Destroy (lineobject);
 			lineobject = new GameObject ("MinkLine");
@@ -37,22 +42,14 @@ public class GJK : MonoBehaviour {
 			outline = OuterLines [0].GetComponent<LineRenderer> ();
 
 		}
-			//LineRenderer outline = OuterLines [0].GetComponent<LineRenderer> ();
-		
 
-
-		/*int fst = sim.polys.IndexOf (p1);
-		int snd = sim.polys.IndexOf (p2);
-		if (snd < fst) {
-			int tmp = fst;
-			fst = snd;
-			snd = tmp;
-		}*/
-
+		//loop to go through all the parts of every polygon with all the parts
+		//of the other polygon until a hit is made
 		for (int i = 0; i < p1.parts.Count; i++) {
 			for (int j = 0; j < p2.parts.Count; j++) {
 				if (currIterations <= maxIterations) {
-				
+
+					//tutorial mode code
 					if (tutorialMode && currIterations < maxIterations) {	
 						outline = OuterLines [i * p2.parts.Count + j].GetComponent<LineRenderer> ();
 						outline.GetComponent<Renderer> ().material.color = Color.red;
@@ -60,8 +57,9 @@ public class GJK : MonoBehaviour {
 							outline.SetPosition (p, new Vector3 (outline.GetPosition (p).x, outline.GetPosition (p).y, -0.01f));
 						}
 					}
-//					if (GARB (sim.polys [fst], sim.polys [snd], p1.parts [i], p2.parts [j])) {
-					if(GARB(p1,p2,p1.parts[i],p2.parts[j])){
+
+					//Hit was detected
+					if(GARB(p1.parts[i],p2.parts[j])){
 						done = true;
 						return true;
 					}
@@ -78,10 +76,15 @@ public class GJK : MonoBehaviour {
 		return false;
 	}
 
+	/*
+	 * Return the two closest points between two polygons
+	 */
 	public Vector2[] closestPoints(Polygon p1, Polygon p2){
 		Vector2[] closestPoints = new Vector2[]{Vector2.zero,Vector2.zero};
 		float dist = Mathf.Infinity;
 
+		//loop to go through all the parts of every polygon with all the parts
+		//of the other polygon and saving the shortest distance
 		for (int i = 0; i < p1.parts.Count; i++) {
 			for (int j = 0; j < p2.parts.Count; j++) {
 				Vector2[] newPoints = BARG(p1.parts[i], p2.parts[j]);
@@ -98,16 +101,19 @@ public class GJK : MonoBehaviour {
 
 
 
-	/** Are the GA intersecting the RB */
-	public	bool  GARB (Polygon P1, Polygon P2, Polygon p1, Polygon p2){
-		
-		//List<Vector2> tutorialPoints = new List<Vector2> ();
+	/*
+	 * Method that performs the GJK algorithm between two convex polygons 
+	 * return true if they are interpenetrating false otherwise.
+	 * A lot of the stuff in here is drawing code for the tutorial since Unity
+	 * wont allow us to separate this
+	 */
+	public	bool  GARB (Polygon p1, Polygon p2){
+
 		dir = p1.vertices [0] - p2.vertices [0];
 
 		List<MinkDiff> simplex = new List<MinkDiff> ();
 		MinkDiff a = support (p1, p2, dir);
 		simplex.Add (a);
-
 
 		if (tutorialMode && currIterations < maxIterations) {
 			foreach (GameObject gameobj in GameObject.FindObjectsOfType<GameObject>()) {
@@ -115,8 +121,6 @@ public class GJK : MonoBehaviour {
 					Destroy (gameobj);
 				}
 			}
-
-			//tutorialPoints.Add (a.diff);
 			a.draw (0);
 		}
 		dir = -1 * dir;
@@ -130,40 +134,39 @@ public class GJK : MonoBehaviour {
 					return false;
 				}
 			}
-				a = support (p1, p2, dir);
+			a = support (p1, p2, dir);
 
-				simplex.Add (a);
+			simplex.Add (a);
 			if (tutorialMode) {
-				//tutorialPoints.Add (a.diff);
-			a.draw (loopcounter + 1);
+				a.draw (loopcounter + 1);
 			}
 
 			if (tutorialMode) {
-				//List<Vector3> minkidiffipoints = jarvis (tutorialPoints);
-				List<Vector3> minkidiffipoints = jarvis(simplex);
+				List<Vector3> minkidiffipoints = jarvis (simplex);
 				minkidiffipoints.Add (minkidiffipoints [0]);
 				line.numPositions = minkidiffipoints.Count;
 				line.SetPositions (minkidiffipoints.ToArray ());
 			}
-				if (!canContainOrigin (a.diff, dir)) {
-					return false;
-				} else if (containsOrigin (simplex)) {
-					return true;
-				}
-					loopcounter++;
-
-
-
+			if (!canContainOrigin (a.diff, dir)) {
+				return false;
+			} else if (containsOrigin (simplex)) {
+				return true;
+			}
+			loopcounter++;
 		}
-			
+
 		p1.GetComponent<Renderer> ().material.color = Color.magenta;
 		p2.GetComponent<Renderer> ().material.color = Color.magenta;
 		return false;
 	}
-		
-	/** How are BA antipenetrating RG deep */
+
+	/*
+	 * Method that executes the GJK algorithm for finding the shortest distance
+	 * between two polygons. 
+	 * Returns an array with two points: the point on each polygon that is closest 
+	 * to the other.
+	 */
 	public Vector2[] BARG (Polygon p1, Polygon p2){
-		//dir = p1.transform.position - p2.transform.position;
 		dir = p1.vertices [0] - p2.vertices [0];
 		List<MinkDiff> simplex = new List<MinkDiff> (2);
 		simplex.Add (support (p1, p2, dir));
@@ -175,7 +178,7 @@ public class GJK : MonoBehaviour {
 			if (dir.magnitude == 0) {
 				return new Vector2[2]{ Vector2.zero, Vector2.zero };
 			}
-	
+
 			MinkDiff c = support (p1, p2, dir);
 			if (Vector2.Dot (c.diff, dir) - Vector2.Dot (simplex [0].diff, dir) < TOL) {
 				Vector2[] closestPoints = findClosestPoints (simplex);
@@ -198,7 +201,9 @@ public class GJK : MonoBehaviour {
 		return closestPointss;
 	}
 
-
+	/*
+	 * Find the point on a line segment that is closest to the origin. 
+	 */
 	Vector2 closestPointToOrigin (Vector2 a, Vector2 b){
 		Vector2 ab = b - a;
 		if (ab.magnitude <= TOL)
@@ -209,6 +214,11 @@ public class GJK : MonoBehaviour {
 		return a + proj * ab;
 	}
 
+	/*
+	 * Once the simplex for closest points has been found by BARG (GJK),
+	 * use it to find the coordinates of the closest points on the polygons.
+	 * Returns an array containing these two points.
+	 */
 	Vector2[] findClosestPoints (List<MinkDiff> simplex){
 		Vector2 l = simplex [1].diff - simplex [0].diff;
 		Vector2 a = Vector2.zero;
@@ -236,11 +246,13 @@ public class GJK : MonoBehaviour {
 		return new Vector2[]{ a, b };
 	}
 
-
-
+	/*
+	* Find the vertex of p1 that is the furthest from its center in
+	* direction dir, and the vertex of p2 that is the furthest from
+	* its center in direction -1 * dir. Return these two points and 
+	* the vector between them, all stored in a MinkDiff object.
+	*/
 	MinkDiff support (Polygon p1, Polygon p2, Vector2 dir){
-		
-
 		GameObject a = new GameObject ("MinkDiff");
 		MinkDiff minkdiff = a.AddComponent<MinkDiff>() as MinkDiff;
 		Destroy (a);
@@ -248,18 +260,28 @@ public class GJK : MonoBehaviour {
 		minkdiff.s2Point = p2.getFurthest (-1 * dir);
 		minkdiff.diff = minkdiff.s1Point - minkdiff.s2Point;
 		return minkdiff;
-		//return new MinkDiff (p1.getFurthest (dir), p2.getFurthest (-1 * dir));
 	}
 
+	/*
+	* Calculates and returns the vector triple product a x (b x c)
+	*/ 
 	Vector2 tripleProd (Vector2 a, Vector2 b, Vector2 c){
 		return b * (Vector2.Dot (c, a)) - a * (Vector2.Dot (c, b));
 	}
 
+	/*
+	* Given an edge vertex (point) on the Minkowski difference in a
+	* direction (dir), determine whether it is possible that the 
+	* Minkowski difference contains the origin.
+	*/
 	bool canContainOrigin (Vector2 point, Vector2 dir){
 		// = 0 betyder nuddis
 		return Vector2.Dot (point, dir) >= 0;
 	}
 
+	/*
+	* Given a simplex, determine if it contains the origin.
+	*/
 	bool containsOrigin (List<MinkDiff> simplex){
 		if (simplex.Count == 3) {
 			return tripleSimplexHF (simplex);
@@ -277,6 +299,9 @@ public class GJK : MonoBehaviour {
 		}
 	}
 
+	/*
+	* Determine whether a triangle contains the origin.
+	*/
 	bool tripleSimplexHF (List<MinkDiff> simplex){
 		Vector2 a = simplex [2].diff;
 		Vector2 ao = -1 * a;
@@ -298,6 +323,9 @@ public class GJK : MonoBehaviour {
 		return false;
 	}	
 
+	/*
+	* Find the convex hull of a list of MinkDiffs
+	*/
 	public List<Vector3> jarvis(List<MinkDiff> points){
 		List<Vector2> temp = new List<Vector2> ();
 		foreach (MinkDiff point in points) {
@@ -307,6 +335,10 @@ public class GJK : MonoBehaviour {
 		return jarvis (temp);
 	}
 
+	/*
+	* Use Jarvis gift-wrapping algorithm to find the 
+	* convex hull of a list of points.
+	*/
 	public List<Vector3> jarvis(List<Vector2> points){
 		Vector3 currentPoint = points [0];
 		foreach (Vector2 point in points){
@@ -334,10 +366,17 @@ public class GJK : MonoBehaviour {
 		return new List<Vector3> (){Vector3.zero};
 	}
 
+	/*
+	* When moving from prev to curr, determine whether you will have
+	* to turn right to reach next.
+	*/
 	bool toTheRight(Vector3 prev, Vector3 curr, Vector3 next) {
 		return (next.y - prev.y) * (curr.x-prev.x) < (next.x - prev.x) * (curr.y-prev.y);
 	}
 
+	/*
+	* Draw the minkowski difference
+	*/
 	public void drawOuterMinkiDiffi(Polygon poly1, Polygon poly2){
 		if (OuterLines != null) {
 			foreach (GameObject line in OuterLines) {

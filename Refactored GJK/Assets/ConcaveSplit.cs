@@ -225,29 +225,10 @@ public class ConcaveSplit{
 
 		if (!curr.Contains (next)) {
 
-			// must be edge in already done piece
-			if (!edges.ContainsKey(next)) {
-				// If there exists a path from the current piece
-				if (edges.ContainsKey(current)) {
-					int right = rightVertex(prev,current);
-					if (toTheRight(prev,current,right)) {
-						curr.Add(right);
+			curr.Add (next);
 
-						addToCurrVisited(right);
-					}
+			if (edges.ContainsKey(next)) {
 
-					else {
-						left(prev,current);
-					}
-				}
-				else {
-					curr.Add(next);
-				}
-			}
-
-			// Must have another edge
-			else {
-				curr.Add (next);
 				// If we can close the vertex
 				if (edges[next].Contains(curr[0])){
 
@@ -319,13 +300,21 @@ public class ConcaveSplit{
 				List <int> temp = new List<int>();
 
 				int i = curr.Count-1;
+				for (int j = 0; j < curr.Count; j++) {
+					if (currVisited.Contains(curr[j])) {
+						visited.Remove(curr[j]);
+					}
+				}
+				currVisited.Clear();
+
+
 				while (i >= 0 && curr[i] != cont) {
 					temp.Add(curr[i]);
+					//currVisited.Remove(curr[i]);
 					curr.RemoveAt(i);
-
 					i--;
 				}
-				currVisited.Clear ();
+				//currVisited.Clear ();
 				temp.Add (cont);
 				if (i > 0 && !notDone.Contains(curr[0])){
 					notDone.Enqueue(curr[0]);
@@ -340,6 +329,7 @@ public class ConcaveSplit{
 				curr = new List<int> (temp);
 				foreach(int j in curr) {
 					addToCurrVisited (j);
+					visited.Add(j);
 				}
 				threePoints(current,cont,curr[1],true);
 

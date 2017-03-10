@@ -1,14 +1,18 @@
 ﻿<Properties StartupItem="Assembly-CSharp.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Unity.Instance.Unity Editor" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/SimulationManager.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/ConcaveSplit.cs">
     <Files>
-      <File FileName="Assets/GJK.cs" Line="83" Column="16" />
-      <File FileName="Assets/SimulationManager.cs" Line="239" Column="22" />
-      <File FileName="Assets/Polygon.cs" Line="100" Column="1" />
+      <File FileName="Assets/GJK.cs" Line="416" Column="2" />
+      <File FileName="Assets/SimulationManager.cs" Line="99" Column="43" />
+      <File FileName="Assets/Polygon.cs" Line="4" Column="17" />
+      <File FileName="Assets/ConcaveSplit.cs" Line="348" Column="23" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore />
+    <BreakpointStore>
+      <Breakpoint file="/Users/roro/Documents/School/Stimulering/GJK-master/Refactored GJK/Assets/ConcaveSplit.cs" line="108" column="1" />
+      <Breakpoint file="/Users/roro/Documents/School/Stimulering/GJK-master/Refactored GJK/Assets/ConcaveSplit.cs" line="141" column="1" />
+    </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
 </Properties>

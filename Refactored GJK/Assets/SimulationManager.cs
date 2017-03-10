@@ -3,7 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unitilities.Tuples;
 using UnityEngine.UI;
-
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+ * Class that handles key input and the simulation						 *
+ * @author Rodrigo Retuerto, Natalie Axelsson, Felix Broberg			 *
+ * @version 2017-03-05													 *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 public class SimulationManager : MonoBehaviour {
 
 	public List<Polygon> polys;
@@ -20,37 +24,22 @@ public class SimulationManager : MonoBehaviour {
 	private Polygon prevMoved;
 	private HashSet<Polygon> done;
 	private Dictionary<Tuple<int,int>,GameObject> closestPts;
-	//public Dictionary<Tuple<Tuple<int,int>,Tuple<int,int>>,List<GameObject>> tutPts;
 	public int iterationSteps = 0;
 	public Text stepLabel;
 
-
-
-	// Use this for initialization
+	/**
+	* Initialize the graphics and objects needed to run the program
+	*/
 	void Start () {
 		stepLabel = GameObject.Find ("StepLabel").GetComponent<Text> ();
 		moved = new Queue<Polygon> ();
 		done = new HashSet<Polygon> ();
 		closestPts = new Dictionary<Tuple<int,int>,GameObject> ();
-		//tutPts = new Dictionary<Tuple<Tuple<int,int>,Tuple<int,int>>,List<GameObject>>();
 
 		polys = new List<Polygon> ();
-		//gjk = new GJK ();
 		GameObject a = new GameObject("GJK");
 		gjk = a.AddComponent<GJK> () as GJK;
 
-		//gjk.sim = this;
-		//List<Vector2> vertices2D = new List<Vector2>() {
-		//	
-		//	new Vector2( -1f ,0f),
-		//	new Vector2( -1f, 1f),
-		//	new Vector2( 1, 1f),
-		//	new Vector2( 1f , 0f),
-		//
-		//};
-
-		//addPoly (vertices2D);
-		//selectedPoly = polys [0];
 		newPolypoints = new List<Vector2>();
 		GameObject newPoly = new GameObject ();
 		newPolyLine = newPoly.AddComponent<LineRenderer> ();
@@ -63,19 +52,11 @@ public class SimulationManager : MonoBehaviour {
 		minkiDinkiLine.material = new Material (Shader.Find ("Particles/Additive"));
 		minkiDinkiLine.widthMultiplier = 0.03f;
 		minkiDinkiLine.numPositions = 0;
-
 	}
 
-	void addPoly(List<Vector2> vertices){
-		GameObject a = new GameObject ("Poly");
-		Polygon aa = a.AddComponent<Polygon>() as Polygon;
-		aa.touching = new HashSet<Polygon> ();
-		aa.addVertices (vertices);
-		polys.Add (aa);
-		moved.Enqueue (aa);
-	}
-
-	// Update is called once per frame
+	/**
+	* Look for updates in each frame
+	*/
 	void Update () {
 		gjk.maxIterations = iterationSteps;
 
@@ -93,27 +74,53 @@ public class SimulationManager : MonoBehaviour {
 			if (Input.GetKeyDown(KeyCode.J)) {
 				iterationSteps = Mathf.Max (iterationSteps - 1, 0);
 				stepLabel.text = "Step : " + iterationSteps;
-
 			}
 		}
 
+		foreach (GameObject gameobj in GameObject.FindObjectsOfType<GameObject>()) {
+			if (gameobj.name == "PartialLine") {
+			Destroy (gameobj);
+			}
+		}
 
-		//for (int s = 0; s < polys.Count; s++) {
-		//	polys [s].hit = false;
-		//}
-
-		if (gjk.tutorialMode)
+		if (gjk.tutorialMode){
 			moved.Enqueue (prevMoved);
+			foreach (Polygon p in polys) {
+				foreach (Polygon q in p.parts) {
+					GameObject lineobject = new GameObject ("PartialLine");
+
+					LineRenderer line = lineobject.AddComponent<LineRenderer> ();
+					line.GetComponent<Renderer> ().material.color = Color.red;
+					line.widthMultiplier = 0.02f;
+					line.numPositions = q.vertices.Length + 1;
+					for (int r = 0; r < q.vertices.Length; r++) {
+						line.SetPosition (r, new Vector3 (q.vertices[r].x, q.vertices[r].y, -0.01f));
+					}
+					line.SetPosition (line.numPositions-1, new Vector3 (q.vertices [0].x, q.vertices [0].y, -0.01f));
+
+				}
+			}
+		}
 
 		doGJK ();
-
-
 	}
 
+	/**
+	* Add a polygon to the scene
+	*/
+	void addPoly(List<Vector2> vertices){
+		GameObject a = new GameObject ("Poly");
+		Polygon aa = a.AddComponent<Polygon>() as Polygon;
+		aa.touching = new HashSet<Polygon> ();
+		aa.addVertices (vertices);
+		polys.Add (aa);
+		moved.Enqueue (aa);
+	}
 
+	/**
+	* Decide which polygons to perform GJK on and then do it
+	*/
 	void doGJK() {
-
-
 		while (moved.Count > 0){
 			Polygon fst = moved.Dequeue ();
 			prevMoved = fst;
@@ -130,29 +137,12 @@ public class SimulationManager : MonoBehaviour {
 					b = tmp;
 				}
 
-
-				/*for (int i = 0; i < polys[a].parts.Count; i++) {
-					for (int j = 0; j < polys[b].parts.Count; j++) {
-						Tuple<Tuple<int,int>,Tuple<int,int>> tp = 
-							new Tuple<Tuple<int,int>,Tuple<int,int>> (new Tuple<int, int>(a,i), new Tuple<int, int>(b,j));
-						if (tutPts.ContainsKey (tp)) {
-							foreach (GameObject g in tutPts[tp]) {
-								Destroy (g);
-							}
-						}
-						tutPts [tp] = new List<GameObject> ();
-					}
-				}*/
-
-
 				bool hit = gjk.gjk (polys[a], polys[b]);
 
 				Tuple<int,int> t = new Tuple<int, int> (a, b);
 				if (closestPts.ContainsKey(t))
 					Destroy (closestPts [t]);
 				if (hit) {
-					//fst.hit = true;
-					//p.hit = true;
 					fst.touching.Add(p);
 					p.touching.Add (fst);
 				} else {
@@ -184,11 +174,14 @@ public class SimulationManager : MonoBehaviour {
 		done.Clear ();
 	}
 
-
-
+	/**
+	* Look for input from the keys WASD or QE and move the currently selected
+	* polygon accordingly.
+	*/
 	void movementKey() {
 		bool didMove = false;
 
+		//Movement keys
 		if (Input.GetKey (KeyCode.A)) {
 			if (selectedPoly == null)
 				return;
@@ -222,6 +215,7 @@ public class SimulationManager : MonoBehaviour {
 
 		}
 
+		//Rotation keys
 		if (Input.GetKey (KeyCode.Q)) {
 			if (selectedPoly == null)
 				return;
@@ -249,6 +243,10 @@ public class SimulationManager : MonoBehaviour {
 		}
 	}
 
+	/**
+	* Look for input connected to creating polygons and tutorial mode and
+	* perform connected actions.
+	*/
 	void reactionKey() {
 		if (Input.GetMouseButtonDown(0)) {
 			mousePoint = Input.mousePosition;
@@ -269,7 +267,6 @@ public class SimulationManager : MonoBehaviour {
 			} else if (newPolyDot != null) {
 				Destroy(newPolyDot);
 			}
-
 		}
 
 		if (Input.GetKeyDown(KeyCode.X) && !gjk.tutorialMode) {
@@ -293,19 +290,15 @@ public class SimulationManager : MonoBehaviour {
 			foreach (GameObject g in GameObject.FindObjectsOfType<GameObject>()) {
 				if (g.name == "Poly" && g.GetComponent (typeof(Polygon)) == selectedPoly)
 					Destroy (g);
-
 			}
 			Destroy (selectedPoly);
-
 
 			if (polys.Count > 0) {
 				i = ((i-1) % polys.Count + polys.Count) % polys.Count;
 				selectedPoly = polys [i];
 			} else {
 				selectedPoly = null;
-
 			}
-
 
 			foreach (Polygon p in polys) {
 				moved.Enqueue (p);
@@ -319,7 +312,6 @@ public class SimulationManager : MonoBehaviour {
 				selectedPoly = polys [0];
 			}
 
-			//Destroy (line);
 			newPolyLine.numPositions = 0;
 		}
 
@@ -330,12 +322,9 @@ public class SimulationManager : MonoBehaviour {
 			moved.Enqueue (selectedPoly);
 		}
 
-
 		if (Input.GetKey(KeyCode.R)) {
-			//makeShitAssDiarrhea ();
 			gjk.drawOuterMinkiDiffi(polys[0],polys[1]);
 		}
-
 
 		if (Input.GetKeyDown(KeyCode.U)) {
 			gjk.tutorialMode = ! gjk.tutorialMode;
@@ -358,8 +347,11 @@ public class SimulationManager : MonoBehaviour {
 		}
 	}
 
+	/**
+	* Draw a line between points l1 and l2. The LineRenderer will be 
+	* added as a component to the GameObject g.
+	*/
 	void drawLine(Vector3 l1, Vector3 l2,GameObject g ){
-		//lines.Add (new GameObject ());
 		LineRenderer lineRenderer = g.AddComponent<LineRenderer>();
 		lineRenderer.material = new Material (Shader.Find("Particles/Additive"));
 		lineRenderer.widthMultiplier = 0.05f;
@@ -367,9 +359,4 @@ public class SimulationManager : MonoBehaviour {
 		lineRenderer.SetPosition(0, l1);
 		lineRenderer.SetPosition(1, l2);
 	}
-
-
-
-
-
 }
