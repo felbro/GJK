@@ -48,6 +48,7 @@
   <ItemGroup>
      <Compile Include="Assets\ConcaveSplit.cs" />
      <Compile Include="Assets\GJK.cs" />
+     <Compile Include="Assets\InputManager.cs" />
      <Compile Include="Assets\MinkDiff.cs" />
      <Compile Include="Assets\Polygon.cs" />
      <Compile Include="Assets\SimulationManager.cs" />
